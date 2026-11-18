@@ -129,10 +129,9 @@
       <div class="seg" id="segCat"></div>
       <label class="f">廢物品</label>
       <select id="selItem"></select>
-      <label class="f">序號／批次／備註（選填，會一併寫入檔名與紀錄）</label>
-      <input type="text" id="inpSerial" placeholder="例：機台序號 A123、第 3 批">
       <label class="f">上傳者姓名（只需填一次，會記在此手機）</label>
-      <input type="text" id="inpUploader" placeholder="例：王小明">
+      <input type="text" id="inpUploader" placeholder="張青龍" autocomplete="off">
+      <p class="note" style="margin:8px 0 0">流水號由系統在上傳時自動配發（日期-當日序號，例：20261118-0007），會寫入檔名與紀錄，不需手動填寫。</p>
       <div id="codeWrap" style="display:none"><label class="f">上傳通行碼</label><input type="password" id="inpCode" placeholder="請向管理員索取"></div>
     </div>
 
@@ -142,7 +141,7 @@
       <div id="uploadBar" style="margin-top:14px">
         <button class="btn primary block" id="btnUploadAll" disabled>上傳已選照片（0）</button>
         <div class="progressbar" id="upProg" style="display:none"><i></i></div>
-        <p class="note" style="margin:8px 0 0">檔名會依「機構代碼_類別_物品_元件_階段_日期_時間」自動命名，可在「設定」頁修改規則。照片會先在手機端縮小至 <span id="maxEdgeNote">1920</span>px 長邊再上傳，存入 Google Drive 的「機構／廢物品」資料夾。</p>
+        <p class="note" style="margin:8px 0 0">檔名會依「機構代碼_類別_物品_元件_階段_流水號」自動命名，可在「設定」頁修改規則。照片會先在手機端縮小至 <span id="maxEdgeNote">1920</span>px 長邊再上傳，存入 Google Drive 的「機構／廢物品」資料夾。</p>
       </div>
     </div>
   </section>
@@ -197,7 +196,7 @@
     <div class="card">
       <h2>檔名規則</h2>
       <input type="text" id="cfgTemplate">
-      <p class="note" style="margin-top:8px">可用欄位：<code>{機構代碼}</code> <code>{機構名稱}</code> <code>{類別}</code> <code>{物品}</code> <code>{元件}</code> <code>{階段}</code> <code>{日期}</code> <code>{時間}</code> <code>{序號}</code> <code>{上傳者}</code>。範例：<span id="tplPreview"></span></p>
+      <p class="note" style="margin-top:8px">可用欄位：<code>{機構代碼}</code> <code>{機構名稱}</code> <code>{類別}</code> <code>{物品}</code> <code>{元件}</code> <code>{階段}</code> <code>{流水號}</code> <code>{日期}</code> <code>{時間}</code> <code>{上傳者}</code>。範例：<span id="tplPreview"></span></p>
       <label class="f">照片縮圖長邊（px，愈大愈清楚也愈佔空間）</label>
       <input type="number" id="cfgMaxEdge" min="800" max="4000" step="100">
     </div>
@@ -229,7 +228,7 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbxx7lLefWMpA3SVn64ozZV4
 'use strict';
 const DEFAULT_CONFIG = {
   plants: Array.from({length:9},(_,i)=>({code:'P0'+(i+1), name:'第'+(i+1)+'廠（請於設定修改名稱）'})),
-  template: '{機構代碼}_{類別}_{物品}_{元件}_{階段}_{日期}_{時間}',
+  template: '{機構代碼}_{類別}_{物品}_{元件}_{階段}_{流水號}',
   maxEdge: 1920,
   categories: [
     { key:'家電', label:'家電（廢電子電器）', items:[
@@ -316,16 +315,13 @@ $('#btnSaveApi').onclick = async ()=>{
 $('#inpApi').value = ls('api')||'';
 
 /* ---------- 檔名 ---------- */
+/* 預覽用檔名（正式檔名與流水號由後台在上傳時配發） */
 function buildName(ctx){
-  const map = { '機構代碼':ctx.plantCode, '機構名稱':ctx.plantName, '類別':ctx.cat, '物品':ctx.item, '元件':ctx.comp, '階段':STAGE_LABEL[ctx.stage], '日期':ctx.date, '時間':ctx.time, '序號':ctx.serial||'', '上傳者':ctx.uploader||'' };
+  const map = { '機構代碼':ctx.plantCode, '機構名稱':ctx.plantName, '類別':ctx.cat, '物品':ctx.item, '元件':ctx.comp, '階段':STAGE_LABEL[ctx.stage], '流水號':'流水號', '日期':ctx.date, '時間':ctx.time, '上傳者':ctx.uploader||'' };
   let s = (cfg.template||DEFAULT_CONFIG.template).replace(/\{([^}]+)\}/g,(m,k)=> map[k]!==undefined ? map[k] : '');
   return sanitize(s) + '.jpg';
 }
-function uniqueName(name){
-  const taken = new Set(photos.map(p=>p.fileName)); pending.forEach(p=>taken.add(p.name));
-  if(!taken.has(name)) return name;
-  const base=name.replace(/\.jpg$/,''); let i=2; while(taken.has(base+'_'+i+'.jpg')) i++; return base+'_'+i+'.jpg';
-}
+function uniqueName(name){ return name; }
 
 /* ---------- 路由 ---------- */
 const VIEWS=['upload','gallery','progress','config'];
@@ -354,14 +350,13 @@ function renderUploadSelectors(){
 }
 $('#selPlant').onchange=e=>{ sel.plant=+e.target.value; clearPending(); renderCompList(); };
 $('#selItem').onchange=e=>{ sel.item=+e.target.value; clearPending(); renderCompList(); };
-$('#inpSerial').oninput=()=>{ renameAll(); renderCompList(); };
 $('#inpUploader').value = ls('uploader')||'';
 $('#inpUploader').oninput=e=>{ ls('uploader',e.target.value.trim()); renameAll(); renderCompList(); };
 function renameAll(){ pending.forEach((p)=>{ p.name = uniqueName(buildName(ctxFor(p.ci,p.stage,p.ts))); }); }
 function clearPending(){ pending.forEach(p=>URL.revokeObjectURL(p.url)); pending.clear(); }
 function ctxFor(ci,stage,ts){
   const p=curPlant(), c=curCat(), it=curItem(); const s=stamp(ts?new Date(ts):new Date());
-  return { plantCode:p.code, plantName:p.name, cat:c.key, item:it.name, comp:it.comps[ci].name, stage, date:s.date, time:s.time, serial:$('#inpSerial').value.trim(), uploader:$('#inpUploader').value.trim() };
+  return { plantCode:p.code, plantName:p.name, cat:c.key, item:it.name, comp:it.comps[ci].name, stage, date:s.date, time:s.time, uploader:$('#inpUploader').value.trim() };
 }
 function countUploaded(ci,stage){
   const p=curPlant(), c=curCat(), it=curItem();
@@ -427,12 +422,12 @@ $('#btnUploadAll').onclick = async ()=>{
   for(let i=0;i<keys.length;i++){
     const k=keys[i]; const pd=pending.get(k); pd.status='busy'; renderCompList();
     try{
-      pd.name = uniqueName(pd.name);
       const blob = await compress(pd.blob);
       const data = await toBase64(blob);
-      const meta = { plant:p.code, plantName:p.name, cat:c.key, item:it.name, comp:it.comps[pd.ci].name, stage:pd.stage, serial:$('#inpSerial').value.trim(), uploader:$('#inpUploader').value.trim(), fileName:pd.name };
+      const meta = { plant:p.code, plantName:p.name, cat:c.key, item:it.name, comp:it.comps[pd.ci].name, stage:pd.stage, uploader:$('#inpUploader').value.trim() };
       const r = await call({ action:'upload', code:$('#inpCode').value, meta, data });
-      photos.unshift({ id:r.id, fileName:r.fileName, fileId:r.fileId, url:r.url, uploadedAt:r.uploadedAt, size:r.size, ...meta });
+      photos.unshift({ id:r.id, fileName:r.fileName, serial:r.serial, fileId:r.fileId, url:r.url, uploadedAt:r.uploadedAt, size:r.size, ...meta });
+      toast('已上傳：'+r.fileName, 3000);
       URL.revokeObjectURL(pd.url); pending.delete(k); ok++;
     }catch(err){ pd.status='err'; pd.err=err.message||String(err); fail++; }
     fill.style.width = Math.round((i+1)/keys.length*100)+'%';
@@ -465,7 +460,7 @@ function renderGallery(){
   g.innerHTML = list.map(x=>{
     const plant=cfg.plants.find(p=>p.code===x.plant);
     return '<div class="ph"><a href="'+esc(x.url||'#')+'" target="_blank" rel="noopener"><img loading="lazy" src="'+thumb(x.fileId)+'" alt="" onerror="this.style.opacity=.25"></a>'+
-      '<div class="meta"><b>'+esc(x.fileName)+'</b><span class="tag '+esc(x.stage)+'">'+esc(STAGE_LABEL[x.stage]||x.stage)+'</span>'+esc(x.plant)+(plant?' '+esc(plant.name):'')+'<br>'+esc(x.item)+'／'+esc(x.comp)+(x.serial?'<br>序號：'+esc(x.serial):'')+'<br>'+fmtTime(x.uploadedAt)+(x.uploader?'　'+esc(x.uploader):'')+'</div>'+
+      '<div class="meta"><b>'+esc(x.fileName)+'</b><span class="tag '+esc(x.stage)+'">'+esc(STAGE_LABEL[x.stage]||x.stage)+'</span>'+esc(x.plant)+(plant?' '+esc(plant.name):'')+'<br>'+esc(x.item)+'／'+esc(x.comp)+(x.serial?'<br>流水號：'+esc(x.serial):'')+'<br>'+fmtTime(x.uploadedAt)+(x.uploader?'　'+esc(x.uploader):'')+'</div>'+
       '<div class="acts"><a href="'+esc(x.url||'#')+'" target="_blank" rel="noopener">開啟／下載</a>'+(admin?'<button class="del" data-del="'+esc(x.id)+'">刪除</button>':'')+'</div></div>';
   }).join('');
   $$('button[data-del]',g).forEach(b=>b.onclick=()=>deleteOne(b.dataset.del));
@@ -478,7 +473,7 @@ async function deleteOne(id){
 }
 $('#btnCsv').onclick = ()=>{
   const list=filtered(); if(!list.length){ toast('沒有資料可匯出'); return; }
-  const head=['檔名','機構代碼','機構名稱','類別','廢物品','主軸元件','階段','序號/備註','上傳者','上傳時間','大小(bytes)','Drive連結'];
+  const head=['檔名','機構代碼','機構名稱','類別','廢物品','主軸元件','階段','流水號','上傳者','上傳時間','大小(bytes)','Drive連結'];
   const rows=list.map(x=>[x.fileName,x.plant,x.plantName||'',x.cat,x.item,x.comp,STAGE_LABEL[x.stage]||x.stage,x.serial||'',x.uploader||'',x.uploadedAt,x.size||'',x.url||'']);
   const csv='﻿'+[head,...rows].map(r=>r.map(v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"').join(',')).join('\r\n');
   const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download='主軸元件照片清單_'+stamp().date+'.csv'; document.body.appendChild(a); a.click(); a.remove();
@@ -532,7 +527,7 @@ function renderConfig(){
 }
 function updateTplPreview(){
   const e=cfgEdit||cfg; const p=e.plants[0]||{code:'P01',name:'範例廠'}; const s=stamp();
-  const map={ '機構代碼':p.code,'機構名稱':p.name,'類別':'家電','物品':'廢電冰箱','元件':'廢壓縮機','階段':'破壞前','日期':s.date,'時間':s.time,'序號':'A123','上傳者':'王小明' };
+  const map={ '機構代碼':p.code,'機構名稱':p.name,'類別':'家電','物品':'廢電冰箱','元件':'廢壓縮機','階段':'破壞前','流水號':s.date+'-0007','日期':s.date,'時間':s.time,'上傳者':'張青龍' };
   $('#tplPreview').textContent = sanitize((e.template||'').replace(/\{([^}]+)\}/g,(m,k)=>map[k]!==undefined?map[k]:''))+'.jpg';
 }
 $('#btnSaveCfg').onclick=async()=>{

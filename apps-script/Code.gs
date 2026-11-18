@@ -13,9 +13,11 @@ const ROOT_FOLDER_NAME = '主軸元件照片蒐集';   // Drive 根資料夾名�
 const SHARE_PUBLIC = true;         // true：照片設為「知道連結者可檢視」，前端才能顯示縮圖；false：僅你本人可看
 /* ============================================================ */
 
+const TZ = 'Asia/Taipei';
+const DEFAULT_TEMPLATE = '{機構代碼}_{類別}_{物品}_{元件}_{階段}_{流水號}';
 const SHEET_PHOTOS = '照片';
 const SHEET_CONFIG = '設定';
-const HEADER = ['id','檔名','機構代碼','機構名稱','類別','廢物品','主軸元件','階段','序號/備註','上傳者','上傳時間','大小(bytes)','Drive檔案ID','Drive連結'];
+const HEADER = ['id','檔名','機構代碼','機構名稱','類別','廢物品','主軸元件','階段','流水號','上傳者','上傳時間','大小(bytes)','Drive檔案ID','Drive連結'];
 
 /** 第一次部署前請在編輯器手動執行一次此函式，完成授權並建立資料夾／試算表。 */
 function setup(){
@@ -99,7 +101,7 @@ function upload_(req){
   if(UPLOAD_CODE && req.code !== UPLOAD_CODE) throw new Error('上傳通行碼錯誤');
   const m = req.meta || {};
   if(!req.data) throw new Error('沒有照片資料');
-  if(!m.fileName) throw new Error('缺少檔名');
+  if(!m.plant || !m.item || !m.comp || !m.stage) throw new Error('缺少機構／物品／元件／階段');
   const bytes = Utilities.base64Decode(req.data);
   if(bytes.length > 25*1024*1024) throw new Error('檔案過大');
 
@@ -108,16 +110,32 @@ function upload_(req){
     const root = getRoot();
     const plantFolder = subFolder_(root, (m.plant||'') + (m.plantName ? '_' + m.plantName : ''));
     const itemFolder = subFolder_(plantFolder, m.item || '未分類');
-    let name = sanitize_(m.fileName); if(!/\.jpe?g$/i.test(name)) name += '.jpg';
-    name = uniqueName_(itemFolder, name);
+    const nowDate = new Date();
+    const serial = nextSerial_(nowDate);                       // 後台配發流水號：日期-當日序號
+    const cfg = getConfig_();
+    const template = (cfg && cfg.template) || DEFAULT_TEMPLATE;
+    const stageLabel = m.stage === 'before' ? '破壞前' : m.stage === 'after' ? '破壞後' : m.stage;
+    const map = { '機構代碼':m.plant||'', '機構名稱':m.plantName||'', '類別':m.cat||'', '物品':m.item||'', '元件':m.comp||'', '階段':stageLabel,
+                  '流水號':serial, '日期':Utilities.formatDate(nowDate, TZ, 'yyyyMMdd'), '時間':Utilities.formatDate(nowDate, TZ, 'HHmmss'), '上傳者':m.uploader||'' };
+    let name = sanitize_(template.replace(/\{([^}]+)\}/g, (s,k)=> map[k]!==undefined ? map[k] : '')) || serial;
+    name = uniqueName_(itemFolder, name + '.jpg');
     const blob = Utilities.newBlob(bytes, 'image/jpeg', name);
     const file = itemFolder.createFile(blob);
     if(SHARE_PUBLIC){ try{ file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); }catch(e){} }
     const id = Utilities.getUuid();
-    const now = new Date().toISOString();
-    photosSheet_().appendRow([id, name, m.plant||'', m.plantName||'', m.cat||'', m.item||'', m.comp||'', m.stage||'', m.serial||'', m.uploader||'', now, bytes.length, file.getId(), file.getUrl()]);
-    return { ok:true, id:id, fileName:name, fileId:file.getId(), url:file.getUrl(), uploadedAt:now, size:bytes.length };
+    const now = nowDate.toISOString();
+    photosSheet_().appendRow([id, name, m.plant||'', m.plantName||'', m.cat||'', m.item||'', m.comp||'', m.stage||'', serial, m.uploader||'', now, bytes.length, file.getId(), file.getUrl()]);
+    return { ok:true, id:id, fileName:name, serial:serial, fileId:file.getId(), url:file.getUrl(), uploadedAt:now, size:bytes.length };
   } finally { lock.releaseLock(); }
+}
+/** 流水號：yyyyMMdd-NNNN（每日從 0001 起算，計數器存在 Script Properties；須在 lock 內呼叫） */
+function nextSerial_(d){
+  const props = PropertiesService.getScriptProperties();
+  const day = Utilities.formatDate(d, TZ, 'yyyyMMdd');
+  const key = 'SEQ_' + day;
+  const n = parseInt(props.getProperty(key) || '0', 10) + 1;
+  props.setProperty(key, String(n));
+  return day + '-' + ('0000' + n).slice(-4);
 }
 function uniqueName_(folder, name){
   if(!folder.getFilesByName(name).hasNext()) return name;

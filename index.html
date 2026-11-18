@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b6e4f">
+<title>主軸元件照片蒐集平台</title>
+<style>
+  :root{
+    --bg:#f4f6f8; --card:#ffffff; --ink:#1a1f24; --muted:#5f6b76; --line:#dfe4e9;
+    --brand:#0b6e4f; --brand-ink:#ffffff; --brand-soft:#e3f3ec;
+    --warn:#b7791f; --warn-soft:#fff5e0; --bad:#b3261e; --bad-soft:#fde8e6; --ok:#1b7f3b; --ok-soft:#e2f5e8;
+    --radius:14px; --shadow:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.08);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC","Microsoft JhengHei","Segoe UI",Roboto,sans-serif;font-size:16px;line-height:1.45;-webkit-text-size-adjust:100%}
+  body{padding-top:env(safe-area-inset-top);padding-bottom:calc(72px + env(safe-area-inset-bottom))}
+  header{position:sticky;top:0;z-index:5;background:var(--brand);color:var(--brand-ink);padding:12px 16px;display:flex;align-items:center;gap:10px;box-shadow:var(--shadow)}
+  header h1{font-size:17px;margin:0;font-weight:700;flex:1;letter-spacing:.02em}
+  .pill{font-size:12px;padding:3px 9px;border-radius:999px;background:rgba(255,255,255,.18);white-space:nowrap}
+  main{max-width:760px;margin:0 auto;padding:14px 14px 20px}
+  .view{display:none}.view.active{display:block}
+  .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;margin-bottom:12px}
+  .card h2{font-size:15px;margin:0 0 10px;color:var(--muted);font-weight:600;letter-spacing:.04em}
+  label.f{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
+  select,input[type=text],input[type=password],input[type=number],textarea{width:100%;font:inherit;font-size:16px;padding:12px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink)}
+  textarea{min-height:80px;resize:vertical}
+  .seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .seg button{flex:1;padding:12px;border:0;background:#fff;font:inherit;font-size:16px;color:var(--muted);cursor:pointer}
+  .seg button.on{background:var(--brand);color:#fff;font-weight:700}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font:inherit;font-size:15px;font-weight:600;padding:12px 16px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;min-height:44px;text-decoration:none}
+  .btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+  .btn.danger{color:var(--bad);border-color:#f1c2bf;background:var(--bad-soft)}
+  .btn.block{width:100%}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .btn.sm{padding:8px 12px;font-size:14px;min-height:36px}
+  .note{font-size:13px;color:var(--muted)}
+  .banner{border-radius:10px;padding:10px 12px;font-size:14px;margin-bottom:12px}
+  .banner.warn{background:var(--warn-soft);color:#7a4e00;border:1px solid #f3dca6}
+  .banner.bad{background:var(--bad-soft);color:var(--bad);border:1px solid #f1c2bf}
+  .banner.ok{background:var(--ok-soft);color:var(--ok);border:1px solid #bfe6cb}
+  .banner.info{background:var(--brand-soft);color:#0b4f3a;border:1px solid #bfe0d1}
+  .comp{border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:12px;background:#fff}
+  .comp .title{font-weight:700;font-size:16px;display:flex;align-items:center;gap:8px}
+  .comp .hint{font-size:13px;color:var(--muted);margin-top:3px}
+  .slots{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+  .slot{border:1.5px dashed var(--line);border-radius:10px;padding:10px;text-align:center;position:relative;min-height:150px;display:flex;flex-direction:column;gap:6px;align-items:center;justify-content:center}
+  .slot.has{border-style:solid;border-color:var(--brand)}
+  .slot .stage{font-weight:700;font-size:14px}
+  .slot .stage.before{color:var(--warn)}
+  .slot .stage.after{color:var(--ok)}
+  .slot img{width:100%;max-height:150px;object-fit:cover;border-radius:8px}
+  .slot .fname{font-size:11px;color:var(--muted);word-break:break-all;line-height:1.3}
+  .slot .cnt{position:absolute;top:6px;right:6px;font-size:11px;background:var(--ok-soft);color:var(--ok);border-radius:999px;padding:2px 7px;font-weight:700}
+  .slot input[type=file]{display:none}
+  .slot .camera{display:inline-flex;align-items:center;gap:6px;font-size:15px;font-weight:600;padding:10px 14px;border-radius:10px;background:var(--brand-soft);color:var(--brand);cursor:pointer;min-height:44px}
+  .slot .st{font-size:12px;font-weight:600}
+  .slot .st.up{color:var(--ok)} .slot .st.err{color:var(--bad)} .slot .st.busy{color:var(--warn)}
+  .slot .x{position:absolute;top:6px;left:6px;background:#fff;border:1px solid var(--line);border-radius:999px;width:26px;height:26px;font-size:14px;line-height:24px;cursor:pointer}
+  nav{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);display:flex;z-index:6;padding-bottom:env(safe-area-inset-bottom)}
+  nav a{flex:1;text-align:center;padding:9px 4px 7px;font-size:12px;color:var(--muted);text-decoration:none;display:flex;flex-direction:column;align-items:center;gap:2px}
+  nav a .ic{font-size:20px;line-height:1}
+  nav a.on{color:var(--brand);font-weight:700}
+  .filters{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:12px}
+  .ph{background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
+  .ph img{width:100%;aspect-ratio:1;object-fit:cover;background:#eee;display:block}
+  .ph .meta{padding:8px;font-size:12px;color:var(--muted);line-height:1.35}
+  .ph .meta b{color:var(--ink);font-size:13px;display:block;word-break:break-all}
+  .ph .acts{display:flex;gap:6px;padding:0 8px 8px}
+  .ph .acts a,.ph .acts button{flex:1;font:inherit;font-size:13px;padding:7px 4px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer;min-height:34px;text-align:center;text-decoration:none;color:var(--ink)}
+  .ph .acts button.del{color:var(--bad)}
+  .tag{display:inline-block;font-size:11px;padding:1px 6px;border-radius:6px;margin-right:4px}
+  .tag.before{background:var(--warn-soft);color:#7a4e00}.tag.after{background:var(--ok-soft);color:var(--ok)}
+  .tablewrap{overflow:auto;-webkit-overflow-scrolling:touch;margin-top:8px}
+  table.prog{border-collapse:collapse;font-size:12px;min-width:100%}
+  table.prog th,table.prog td{border:1px solid var(--line);padding:6px 6px;text-align:center;white-space:nowrap}
+  table.prog th{background:#f0f3f6;font-weight:600}
+  table.prog td.rowh{text-align:left;position:sticky;left:0;background:#fff;font-weight:600;z-index:1;max-width:190px;white-space:normal}
+  table.prog th.rowh{position:sticky;left:0;z-index:2}
+  td.c0{background:#fff}td.c1{background:var(--warn-soft)}td.c2{background:var(--ok-soft);color:var(--ok);font-weight:700}
+  .summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .sumbox{border:1px solid var(--line);border-radius:10px;padding:10px;text-align:center}
+  .sumbox .n{font-size:22px;font-weight:800;color:var(--brand)}
+  .sumbox .l{font-size:12px;color:var(--muted)}
+  .row{display:flex;gap:8px;align-items:center;margin-top:8px}
+  .row input{flex:1}
+  .row .code{flex:0 0 90px}
+  .item{border:1px solid var(--line);border-radius:10px;padding:10px;margin-top:10px}
+  .item .row input{font-weight:600}
+  .rm{flex:0 0 40px;height:44px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--bad);font-size:18px;cursor:pointer}
+  .toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#1a1f24;color:#fff;padding:10px 16px;border-radius:999px;font-size:14px;z-index:9;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw;text-align:center}
+  .toast.show{opacity:1}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:8;padding:20px}
+  .modal.show{display:flex}
+  .modal .box{background:#fff;border-radius:14px;padding:18px;max-width:420px;width:100%}
+  .modal .box p{margin:0 0 14px}
+  .modal .acts{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+  .progressbar{height:8px;background:var(--line);border-radius:999px;overflow:hidden;margin-top:8px}
+  .progressbar i{display:block;height:100%;background:var(--brand);width:0;transition:width .2s}
+  code{background:#eef1f4;padding:1px 5px;border-radius:5px;font-size:12px;word-break:break-all}
+  @media (min-width:640px){ .filters{grid-template-columns:repeat(4,1fr)} }
+</style>
+</head>
+<body>
+<header>
+  <h1>主軸元件照片蒐集平台</h1>
+  <span class="pill" id="rolePill">連線中…</span>
+</header>
+
+<main>
+  <div id="sysBanner"></div>
+
+  <!-- 尚未設定後端時顯示 -->
+  <section class="card" id="setupCard" style="display:none">
+    <h2>首次設定：連接 Google Apps Script 後端</h2>
+    <p class="note">請把部署好的 Apps Script「網頁應用程式網址」（以 <code>https://script.google.com/macros/s/…/exec</code> 結尾）貼到下方。正式使用時請改寫 index.html 第一行 <code>API_URL</code>，所有人開網址就不必再貼。</p>
+    <input type="text" id="inpApi" placeholder="https://script.google.com/macros/s/XXXX/exec">
+    <button class="btn primary block" id="btnSaveApi" style="margin-top:8px">連線測試並儲存在此裝置</button>
+  </section>
+
+  <!-- ===== 拍照上傳 ===== -->
+  <section class="view" id="view-upload">
+    <div class="card">
+      <h2>1. 選擇受補貼機構與廢物品</h2>
+      <label class="f">受補貼機構（9 廠）</label>
+      <select id="selPlant"></select>
+      <label class="f">類別</label>
+      <div class="seg" id="segCat"></div>
+      <label class="f">廢物品</label>
+      <select id="selItem"></select>
+      <label class="f">序號／批次／備註（選填，會一併寫入檔名與紀錄）</label>
+      <input type="text" id="inpSerial" placeholder="例：機台序號 A123、第 3 批">
+      <label class="f">上傳者姓名（只需填一次，會記在此手機）</label>
+      <input type="text" id="inpUploader" placeholder="例：王小明">
+      <div id="codeWrap" style="display:none"><label class="f">上傳通行碼</label><input type="password" id="inpCode" placeholder="請向管理員索取"></div>
+    </div>
+
+    <div class="card">
+      <h2>2. 依下方清單拍攝主軸元件（破壞前／破壞後）</h2>
+      <div id="compList"></div>
+      <div id="uploadBar" style="margin-top:14px">
+        <button class="btn primary block" id="btnUploadAll" disabled>上傳已選照片（0）</button>
+        <div class="progressbar" id="upProg" style="display:none"><i></i></div>
+        <p class="note" style="margin:8px 0 0">檔名會依「機構代碼_類別_物品_元件_階段_日期_時間」自動命名，可在「設定」頁修改規則。照片會先在手機端縮小至 <span id="maxEdgeNote">1920</span>px 長邊再上傳，存入 Google Drive 的「機構／廢物品」資料夾。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 照片總覽 ===== -->
+  <section class="view" id="view-gallery">
+    <div class="card">
+      <h2>篩選</h2>
+      <div class="filters">
+        <select id="gPlant"><option value="">全部機構</option></select>
+        <select id="gCat"><option value="">全部類別</option></select>
+        <select id="gItem"><option value="">全部廢物品</option></select>
+        <select id="gStage"><option value="">破壞前＋後</option><option value="before">破壞前</option><option value="after">破壞後</option></select>
+      </div>
+      <div class="row" style="margin-top:10px;flex-wrap:wrap">
+        <span class="note" id="gCount" style="flex:1">—</span>
+        <button class="btn sm" id="btnRefresh">重新整理</button>
+        <button class="btn sm" id="btnCsv">匯出清單 CSV</button>
+        <a class="btn sm" id="lnkFolder" href="#" target="_blank" rel="noopener">開啟 Drive 資料夾</a>
+      </div>
+      <p class="note" style="margin:8px 0 0">要一次下載所有照片：開啟 Drive 資料夾 → 右鍵資料夾 → 下載，Google 會自動打包成 ZIP。</p>
+    </div>
+    <div id="gallery" class="grid"></div>
+    <p class="note" id="gEmpty" style="text-align:center;display:none">目前沒有符合條件的照片。</p>
+  </section>
+
+  <!-- ===== 進度 ===== -->
+  <section class="view" id="view-progress">
+    <div class="card">
+      <h2>整體完成度</h2>
+      <div class="summary" id="sumBoxes"></div>
+      <p class="note" style="margin:10px 0 0">每格顯示「破壞前張數 / 破壞後張數」。綠色＝兩者皆有，黃色＝只有其中一種，白色＝尚未上傳。</p>
+    </div>
+    <div class="card">
+      <h2>各機構 × 主軸元件</h2>
+      <div class="tablewrap"><table class="prog" id="progTable"></table></div>
+    </div>
+  </section>
+
+  <!-- ===== 設定 ===== -->
+  <section class="view" id="view-config">
+    <div class="card" id="adminCard">
+      <h2>管理者登入</h2>
+      <div class="row" style="margin-top:0"><input type="password" id="inpAdmin" placeholder="管理密碼（Code.gs 的 ADMIN_CODE）"><button class="btn" id="btnAdmin">登入</button></div>
+      <p class="note" style="margin-top:8px">未登入時以唯讀顯示；登入後可修改清單與刪除照片。密碼只保存在此瀏覽器的本次工作階段。</p>
+    </div>
+    <div class="card">
+      <h2>受補貼機構（代碼會用於檔名與 Drive 資料夾）</h2>
+      <div id="cfgPlants"></div>
+      <button class="btn sm" id="btnAddPlant" style="margin-top:10px">＋ 新增機構</button>
+    </div>
+    <div class="card">
+      <h2>檔名規則</h2>
+      <input type="text" id="cfgTemplate">
+      <p class="note" style="margin-top:8px">可用欄位：<code>{機構代碼}</code> <code>{機構名稱}</code> <code>{類別}</code> <code>{物品}</code> <code>{元件}</code> <code>{階段}</code> <code>{日期}</code> <code>{時間}</code> <code>{序號}</code> <code>{上傳者}</code>。範例：<span id="tplPreview"></span></p>
+      <label class="f">照片縮圖長邊（px，愈大愈清楚也愈佔空間）</label>
+      <input type="number" id="cfgMaxEdge" min="800" max="4000" step="100">
+    </div>
+    <div id="cfgCats"></div>
+    <div class="card">
+      <button class="btn primary block" id="btnSaveCfg">儲存設定</button>
+      <button class="btn block" id="btnResetCfg" style="margin-top:8px">還原為手冊預設清單</button>
+      <p class="note" style="margin-top:10px">預設主軸元件清單依據環境部資源循環署《應回收廢棄物回收清除處理稽核認證作業手冊（廢電子電器暨廢資訊物品類）》115 年 4 月版整理，請依貴單位實際需求調整。</p>
+    </div>
+  </section>
+</main>
+
+<nav>
+  <a href="#upload" data-v="upload"><span class="ic">📷</span>拍照上傳</a>
+  <a href="#gallery" data-v="gallery"><span class="ic">🖼</span>照片總覽</a>
+  <a href="#progress" data-v="progress"><span class="ic">📊</span>進度</a>
+  <a href="#config" data-v="config"><span class="ic">⚙️</span>設定</a>
+</nav>
+
+<div class="toast" id="toast"></div>
+<div class="modal" id="modal"><div class="box"><p id="modalMsg"></p><div class="acts"><button class="btn" id="modalNo">取消</button><button class="btn danger" id="modalYes">確定</button></div></div></div>
+
+<script>
+/* ===================================================================== */
+/*  部署後請把 Apps Script 的「網頁應用程式網址」貼在下一行的引號內：       */
+const API_URL = '';
+/* ===================================================================== */
+(function(){
+'use strict';
+const DEFAULT_CONFIG = {
+  plants: Array.from({length:9},(_,i)=>({code:'P0'+(i+1), name:'第'+(i+1)+'廠（請於設定修改名稱）'})),
+  template: '{機構代碼}_{類別}_{物品}_{元件}_{階段}_{日期}_{時間}',
+  maxEdge: 1920,
+  categories: [
+    { key:'家電', label:'家電（廢電子電器）', items:[
+      { name:'廢CRT電視機', comps:[ {name:'廢偏向線圈', hint:'查點後立即減容破壞；破壞前請拍整體與線圈特寫'} ] },
+      { name:'廢LCD電視機', comps:[ {name:'廢液晶面板', hint:'偏光膜「+」字切割（每邊≥5cm、寬≥0.3cm）或破碎'} ] },
+      { name:'廢電冰箱', comps:[ {name:'廢壓縮機', hint:'冷媒出入口銅管保留1條≥3cm，剪除至無法再使用（無壓縮機者拍製冷機芯）'} ] },
+      { name:'廢洗衣機', comps:[ {name:'廢洗衣機馬達', hint:'離子切割器／砂輪機／≥0.5cm電鑽破壞性標記'} ] },
+      { name:'廢冷暖氣機', comps:[ {name:'廢冷暖氣機壓縮機', hint:'冷媒出入口銅管保留1條≥3cm，剪除至無法再使用'} ] },
+      { name:'廢電風扇', comps:[ {name:'廢電風扇馬達總成', hint:'離子切割器／砂輪機／≥0.5cm電鑽破壞性標記'} ] }
+    ]},
+    { key:'資訊', label:'資訊（廢資訊物品）', items:[
+      { name:'廢CRT顯示器', comps:[ {name:'廢偏向線圈', hint:'查點後立即減容破壞'} ] },
+      { name:'廢LCD顯示器', comps:[ {name:'廢液晶面板', hint:'偏光膜「+」字切割或破碎'} ] },
+      { name:'廢主機A', comps:[ {name:'廢主機板', hint:'須已去除電池；標示後破碎'}, {name:'廢電源器', hint:'電源輸入面朝外；切割破壞'}, {name:'廢硬式磁碟機', hint:'連接埠朝外；破碎或切割連接埠（割痕≥5mm）'} ] },
+      { name:'廢主機B', comps:[ {name:'廢主機板', hint:'須已去除電池；標示後破碎'}, {name:'廢硬式磁碟機', hint:'連接埠朝外；破碎或切割連接埠（割痕≥5mm）'} ] },
+      { name:'廢主機C', comps:[ {name:'廢主機板', hint:'須已去除電池；標示後破碎'}, {name:'廢電源器', hint:'電源輸入面朝外；切割破壞'} ] },
+      { name:'廢主機D', comps:[ {name:'廢主機板', hint:'須已去除電池；標示後破碎'} ] },
+      { name:'廢可攜式電腦（筆記型、平板）', comps:[ {name:'廢液晶面板', hint:'偏光膜「+」字切割或破碎'} ] },
+      { name:'廢印表機', comps:[ {name:'廢介面卡', hint:'須已去除電池；標示後破碎'} ] },
+      { name:'廢鍵盤', comps:[ {name:'廢鍵盤面板', hint:'含印刷電路板者需破碎；不含者標示入庫'} ] }
+    ]}
+  ]
+};
+const STAGE_LABEL = { before:'破壞前', after:'破壞後' };
+
+/* ---------- 狀態 ---------- */
+let api = API_URL || ls('api') || '';
+let online = false, needCode = false;
+let cfg = deepClone(DEFAULT_CONFIG);
+let photos = [];
+let pending = new Map();
+let sel = { plant:0, cat:0, item:0 };
+let admin = ss('admin') || '';
+let cfgEdit = null, cfgDirty = false;
+
+const $ = (s,el=document)=>el.querySelector(s);
+const $$ = (s,el=document)=>Array.from(el.querySelectorAll(s));
+function ls(k,v){ try{ if(v===undefined) return localStorage.getItem(k); localStorage.setItem(k,v); }catch(e){ return null; } }
+function ss(k,v){ try{ if(v===undefined) return sessionStorage.getItem(k); sessionStorage.setItem(k,v); }catch(e){ return null; } }
+function deepClone(o){ return JSON.parse(JSON.stringify(o)); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function toast(msg,ms=2400){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),ms); }
+function confirmBox(msg){ return new Promise(res=>{ const m=$('#modal'); $('#modalMsg').textContent=msg; m.classList.add('show'); const done=v=>{ m.classList.remove('show'); $('#modalYes').onclick=null; $('#modalNo').onclick=null; res(v); }; $('#modalYes').onclick=()=>done(true); $('#modalNo').onclick=()=>done(false); }); }
+function pad(n){ return String(n).padStart(2,'0'); }
+function stamp(d=new Date()){ return { date: d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate()), time: pad(d.getHours())+pad(d.getMinutes())+pad(d.getSeconds()) }; }
+function fmtTime(iso){ try{ const d=new Date(iso); if(isNaN(d)) return iso||''; return d.getFullYear()+'/'+pad(d.getMonth()+1)+'/'+pad(d.getDate())+' '+pad(d.getHours())+':'+pad(d.getMinutes()); }catch(e){ return iso||''; } }
+function sanitize(s){ return String(s).replace(/[\\/:*?"<>|\s]+/g,'_').replace(/_+/g,'_').replace(/^_+|_+$/g,''); }
+function sysBanner(cls,html){ $('#sysBanner').innerHTML = html ? '<div class="banner '+cls+'">'+html+'</div>' : ''; }
+function setRole(t){ $('#rolePill').textContent=t; }
+
+/* ---------- API ---------- */
+async function call(payload){
+  if(!api) throw new Error('尚未設定後端網址');
+  const r = await fetch(api, { method:'POST', body: JSON.stringify(payload) }); // 不加 header，避免 CORS 預檢
+  const j = await r.json();
+  if(!j.ok) throw new Error(j.error||'後端回應錯誤');
+  return j;
+}
+async function connect(){
+  if(!api){ $('#setupCard').style.display='block'; setRole('未設定後端'); sysBanner('warn','尚未連接後端：請先完成下方「首次設定」。'); return; }
+  setRole('連線中…');
+  try{
+    const p = await call({action:'ping'}); needCode = !!p.needUploadCode; $('#codeWrap').style.display = needCode?'block':'none';
+    const c = await call({action:'config'});
+    if(c.config && Array.isArray(c.config.plants)){ cfg = { plants:c.config.plants, categories:c.config.categories, template:c.config.template||DEFAULT_CONFIG.template, maxEdge:c.config.maxEdge||1920 }; }
+    online = true; $('#setupCard').style.display='none'; sysBanner('', '');
+    setRole(admin?'管理者':'現場人員');
+    afterCfgChange();
+    await loadPhotos();
+  }catch(err){
+    online=false; setRole('離線'); $('#setupCard').style.display='block';
+    sysBanner('bad','無法連線後端：'+esc(err.message)+'。請確認 Apps Script 已部署為「所有人」可存取，且網址正確。');
+  }
+}
+async function loadPhotos(){
+  if(!online) return;
+  try{ const r = await call({action:'list'}); photos = r.photos||[]; if(r.folderUrl) $('#lnkFolder').href=r.folderUrl; renderCompList(); if($('#view-gallery').classList.contains('active')) renderGallery(); if($('#view-progress').classList.contains('active')) renderProgress(); }
+  catch(err){ toast('讀取紀錄失敗：'+err.message); }
+}
+$('#btnSaveApi').onclick = async ()=>{
+  const v=$('#inpApi').value.trim(); if(!/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/.test(v)){ toast('網址格式不對，應以 /exec 結尾'); return; }
+  api=v; ls('api',v); await connect(); if(online) toast('連線成功 ✓');
+};
+$('#inpApi').value = ls('api')||'';
+
+/* ---------- 檔名 ---------- */
+function buildName(ctx){
+  const map = { '機構代碼':ctx.plantCode, '機構名稱':ctx.plantName, '類別':ctx.cat, '物品':ctx.item, '元件':ctx.comp, '階段':STAGE_LABEL[ctx.stage], '日期':ctx.date, '時間':ctx.time, '序號':ctx.serial||'', '上傳者':ctx.uploader||'' };
+  let s = (cfg.template||DEFAULT_CONFIG.template).replace(/\{([^}]+)\}/g,(m,k)=> map[k]!==undefined ? map[k] : '');
+  return sanitize(s) + '.jpg';
+}
+function uniqueName(name){
+  const taken = new Set(photos.map(p=>p.fileName)); pending.forEach(p=>taken.add(p.name));
+  if(!taken.has(name)) return name;
+  const base=name.replace(/\.jpg$/,''); let i=2; while(taken.has(base+'_'+i+'.jpg')) i++; return base+'_'+i+'.jpg';
+}
+
+/* ---------- 路由 ---------- */
+const VIEWS=['upload','gallery','progress','config'];
+function route(){
+  let h=(location.hash||'#upload').slice(1); if(!VIEWS.includes(h)) h='upload';
+  VIEWS.forEach(v=>$('#view-'+v).classList.toggle('active',v===h));
+  $$('nav a').forEach(a=>a.classList.toggle('on',a.dataset.v===h));
+  if(h==='gallery') renderGallery(); if(h==='progress') renderProgress(); if(h==='config') renderConfig();
+  window.scrollTo(0,0);
+}
+window.addEventListener('hashchange',route);
+
+/* ---------- 上傳頁 ---------- */
+function curPlant(){ return cfg.plants[sel.plant]||cfg.plants[0]; }
+function curCat(){ return cfg.categories[sel.cat]||cfg.categories[0]; }
+function curItem(){ const c=curCat(); return c.items[sel.item]||c.items[0]; }
+function renderUploadSelectors(){
+  const sp=$('#selPlant'); sp.innerHTML = cfg.plants.map((p,i)=>'<option value="'+i+'">'+esc(p.code)+'　'+esc(p.name)+'</option>').join('');
+  sp.value = String(Math.min(sel.plant, cfg.plants.length-1));
+  const sg=$('#segCat'); sg.innerHTML = cfg.categories.map((c,i)=>'<button type="button" data-i="'+i+'" class="'+(i===sel.cat?'on':'')+'">'+esc(c.label||c.key)+'</button>').join('');
+  $$('button',sg).forEach(b=>b.onclick=()=>{ sel.cat=+b.dataset.i; sel.item=0; clearPending(); renderUploadSelectors(); });
+  const si=$('#selItem'); si.innerHTML = curCat().items.map((it,i)=>'<option value="'+i+'">'+esc(it.name)+'</option>').join('');
+  si.value=String(Math.min(sel.item, curCat().items.length-1));
+  $('#maxEdgeNote').textContent = cfg.maxEdge||1920;
+  renderCompList();
+}
+$('#selPlant').onchange=e=>{ sel.plant=+e.target.value; clearPending(); renderCompList(); };
+$('#selItem').onchange=e=>{ sel.item=+e.target.value; clearPending(); renderCompList(); };
+$('#inpSerial').oninput=()=>{ renameAll(); renderCompList(); };
+$('#inpUploader').value = ls('uploader')||'';
+$('#inpUploader').oninput=e=>{ ls('uploader',e.target.value.trim()); renameAll(); renderCompList(); };
+function renameAll(){ pending.forEach((p)=>{ p.name = uniqueName(buildName(ctxFor(p.ci,p.stage,p.ts))); }); }
+function clearPending(){ pending.forEach(p=>URL.revokeObjectURL(p.url)); pending.clear(); }
+function ctxFor(ci,stage,ts){
+  const p=curPlant(), c=curCat(), it=curItem(); const s=stamp(ts?new Date(ts):new Date());
+  return { plantCode:p.code, plantName:p.name, cat:c.key, item:it.name, comp:it.comps[ci].name, stage, date:s.date, time:s.time, serial:$('#inpSerial').value.trim(), uploader:$('#inpUploader').value.trim() };
+}
+function countUploaded(ci,stage){
+  const p=curPlant(), c=curCat(), it=curItem();
+  return photos.filter(x=>x.plant===p.code && x.cat===c.key && x.item===it.name && x.comp===it.comps[ci].name && x.stage===stage).length;
+}
+function renderCompList(){
+  const it=curItem(); const box=$('#compList');
+  if(!it){ box.innerHTML='<p class="note">此類別尚未設定任何廢物品。</p>'; return; }
+  box.innerHTML = it.comps.map((cp,ci)=>{
+    return '<div class="comp"><div class="title">主軸元件 '+(ci+1)+'：'+esc(cp.name)+'</div>'+(cp.hint?'<div class="hint">破壞方式：'+esc(cp.hint)+'</div>':'')+
+      '<div class="slots">'+['before','after'].map(stage=>{
+        const key=ci+'|'+stage; const pd=pending.get(key); const n=countUploaded(ci,stage);
+        let inner;
+        if(pd){
+          inner = '<button class="x" data-rm="'+key+'" title="移除">✕</button><img src="'+pd.url+'" alt=""><div class="fname">'+esc(pd.name)+'</div>'+
+            (pd.status==='busy'?'<div class="st busy">上傳中…</div>': pd.status==='err'?'<div class="st err">失敗：'+esc(pd.err||'')+'</div>':'<div class="st">待上傳</div>');
+        } else {
+          inner = '<label class="camera">📷 拍照／選圖<input type="file" accept="image/*" capture="environment" data-key="'+key+'" multiple></label>';
+        }
+        return '<div class="slot '+(pd?'has':'')+'">'+(n?'<span class="cnt">已上傳 '+n+' 張</span>':'')+'<div class="stage '+stage+'">'+STAGE_LABEL[stage]+'</div>'+inner+'</div>';
+      }).join('')+'</div></div>';
+  }).join('');
+  $$('input[type=file]',box).forEach(inp=>inp.onchange=onPick);
+  $$('button[data-rm]',box).forEach(b=>b.onclick=()=>{ const p=pending.get(b.dataset.rm); if(p) URL.revokeObjectURL(p.url); pending.delete(b.dataset.rm); renderCompList(); });
+  const n=pending.size; const btn=$('#btnUploadAll'); btn.textContent='上傳已選照片（'+n+'）'; btn.disabled = n===0 || !online;
+}
+function onPick(e){
+  const files=Array.from(e.target.files||[]); if(!files.length) return;
+  const key=e.target.dataset.key; const [ci,stage]=key.split('|');
+  for(let i=0;i<files.length;i++){
+    const f=files[i]; const k = i===0? key : key+'#'+Date.now()+i; const ts=Date.now();
+    pending.set(k,{ blob:f, url:URL.createObjectURL(f), ts, name:uniqueName(buildName(ctxFor(+ci,stage,ts))), status:'ready', ci:+ci, stage });
+  }
+  renderCompList();
+  if(files.length>1) toast('已加入 '+files.length+' 張，將依序上傳');
+}
+async function compress(file){
+  const maxEdge = +cfg.maxEdge||1920;
+  let bmp=null;
+  try{ bmp = await createImageBitmap(file,{imageOrientation:'from-image'}); }catch(e){ try{ bmp=await createImageBitmap(file); }catch(e2){ bmp=null; } }
+  let w,h,src;
+  if(bmp){ w=bmp.width; h=bmp.height; src=bmp; }
+  else { src = await new Promise((res,rej)=>{ const im=new Image(); im.onload=()=>res(im); im.onerror=rej; im.src=URL.createObjectURL(file); }); w=src.naturalWidth; h=src.naturalHeight; }
+  const scale=Math.min(1, maxEdge/Math.max(w,h));
+  const cw=Math.round(w*scale), ch=Math.round(h*scale);
+  const cv=document.createElement('canvas'); cv.width=cw; cv.height=ch;
+  cv.getContext('2d').drawImage(src,0,0,cw,ch);
+  if(bmp && bmp.close) bmp.close();
+  const blob = await new Promise(res=>cv.toBlob(res,'image/jpeg',0.86));
+  if(!blob) throw new Error('無法轉檔');
+  return blob;
+}
+function toBase64(blob){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(String(r.result).split(',')[1]); r.onerror=rej; r.readAsDataURL(blob); }); }
+
+$('#btnUploadAll').onclick = async ()=>{
+  if(!online) return;
+  if(!$('#inpUploader').value.trim()){ toast('請先填上傳者姓名'); $('#inpUploader').focus(); return; }
+  if(needCode && !$('#inpCode').value){ toast('請輸入上傳通行碼'); $('#inpCode').focus(); return; }
+  const keys=Array.from(pending.keys()).filter(k=>pending.get(k).status!=='busy');
+  if(!keys.length) return;
+  const btn=$('#btnUploadAll'); btn.disabled=true; const bar=$('#upProg'); bar.style.display='block'; const fill=$('i',bar);
+  const p=curPlant(), c=curCat(), it=curItem(); let ok=0, fail=0;
+  for(let i=0;i<keys.length;i++){
+    const k=keys[i]; const pd=pending.get(k); pd.status='busy'; renderCompList();
+    try{
+      pd.name = uniqueName(pd.name);
+      const blob = await compress(pd.blob);
+      const data = await toBase64(blob);
+      const meta = { plant:p.code, plantName:p.name, cat:c.key, item:it.name, comp:it.comps[pd.ci].name, stage:pd.stage, serial:$('#inpSerial').value.trim(), uploader:$('#inpUploader').value.trim(), fileName:pd.name };
+      const r = await call({ action:'upload', code:$('#inpCode').value, meta, data });
+      photos.unshift({ id:r.id, fileName:r.fileName, fileId:r.fileId, url:r.url, uploadedAt:r.uploadedAt, size:r.size, ...meta });
+      URL.revokeObjectURL(pd.url); pending.delete(k); ok++;
+    }catch(err){ pd.status='err'; pd.err=err.message||String(err); fail++; }
+    fill.style.width = Math.round((i+1)/keys.length*100)+'%';
+  }
+  setTimeout(()=>{ bar.style.display='none'; fill.style.width='0'; },800);
+  renderCompList();
+  toast(fail? ('完成 '+ok+' 張，失敗 '+fail+' 張') : ('已上傳 '+ok+' 張 ✓'));
+};
+
+/* ---------- 照片總覽 ---------- */
+function thumb(fileId){ return 'https://drive.google.com/thumbnail?id='+encodeURIComponent(fileId)+'&sz=w400'; }
+function fillFilterSelects(){
+  const v1=$('#gPlant').value, v2=$('#gCat').value, v3=$('#gItem').value;
+  $('#gPlant').innerHTML='<option value="">全部機構</option>'+cfg.plants.map(p=>'<option value="'+esc(p.code)+'">'+esc(p.code)+' '+esc(p.name)+'</option>').join('');
+  $('#gCat').innerHTML='<option value="">全部類別</option>'+cfg.categories.map(c=>'<option value="'+esc(c.key)+'">'+esc(c.key)+'</option>').join('');
+  const items=[]; cfg.categories.forEach(c=>c.items.forEach(it=>{ if(!items.includes(it.name)) items.push(it.name); }));
+  $('#gItem').innerHTML='<option value="">全部廢物品</option>'+items.map(n=>'<option value="'+esc(n)+'">'+esc(n)+'</option>').join('');
+  $('#gPlant').value=v1; $('#gCat').value=v2; $('#gItem').value=v3;
+}
+function filtered(){
+  const fp=$('#gPlant').value, fc=$('#gCat').value, fi=$('#gItem').value, fs=$('#gStage').value;
+  return photos.filter(x=>(!fp||x.plant===fp)&&(!fc||x.cat===fc)&&(!fi||x.item===fi)&&(!fs||x.stage===fs));
+}
+['#gPlant','#gCat','#gItem','#gStage'].forEach(id=>$(id).onchange=renderGallery);
+$('#btnRefresh').onclick=()=>loadPhotos();
+function renderGallery(){
+  const list=filtered(); const g=$('#gallery');
+  $('#gCount').textContent='共 '+list.length+' 張（全部 '+photos.length+' 張）';
+  $('#gEmpty').style.display=list.length?'none':'block';
+  g.innerHTML = list.map(x=>{
+    const plant=cfg.plants.find(p=>p.code===x.plant);
+    return '<div class="ph"><a href="'+esc(x.url||'#')+'" target="_blank" rel="noopener"><img loading="lazy" src="'+thumb(x.fileId)+'" alt="" onerror="this.style.opacity=.25"></a>'+
+      '<div class="meta"><b>'+esc(x.fileName)+'</b><span class="tag '+esc(x.stage)+'">'+esc(STAGE_LABEL[x.stage]||x.stage)+'</span>'+esc(x.plant)+(plant?' '+esc(plant.name):'')+'<br>'+esc(x.item)+'／'+esc(x.comp)+(x.serial?'<br>序號：'+esc(x.serial):'')+'<br>'+fmtTime(x.uploadedAt)+(x.uploader?'　'+esc(x.uploader):'')+'</div>'+
+      '<div class="acts"><a href="'+esc(x.url||'#')+'" target="_blank" rel="noopener">開啟／下載</a>'+(admin?'<button class="del" data-del="'+esc(x.id)+'">刪除</button>':'')+'</div></div>';
+  }).join('');
+  $$('button[data-del]',g).forEach(b=>b.onclick=()=>deleteOne(b.dataset.del));
+}
+async function deleteOne(id){
+  const x=photos.find(p=>p.id===id); if(!x) return;
+  if(!await confirmBox('確定刪除「'+x.fileName+'」？檔案會移到 Drive 垃圾桶。')) return;
+  try{ await call({action:'delete', admin, id}); photos=photos.filter(p=>p.id!==id); renderGallery(); toast('已刪除'); }
+  catch(err){ toast('刪除失敗：'+err.message); }
+}
+$('#btnCsv').onclick = ()=>{
+  const list=filtered(); if(!list.length){ toast('沒有資料可匯出'); return; }
+  const head=['檔名','機構代碼','機構名稱','類別','廢物品','主軸元件','階段','序號/備註','上傳者','上傳時間','大小(bytes)','Drive連結'];
+  const rows=list.map(x=>[x.fileName,x.plant,x.plantName||'',x.cat,x.item,x.comp,STAGE_LABEL[x.stage]||x.stage,x.serial||'',x.uploader||'',x.uploadedAt,x.size||'',x.url||'']);
+  const csv='﻿'+[head,...rows].map(r=>r.map(v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"').join(',')).join('\r\n');
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download='主軸元件照片清單_'+stamp().date+'.csv'; document.body.appendChild(a); a.click(); a.remove();
+};
+
+/* ---------- 進度 ---------- */
+function renderProgress(){
+  const rows=[]; cfg.categories.forEach(c=>c.items.forEach(it=>it.comps.forEach(cp=>rows.push({cat:c.key,item:it.name,comp:cp.name}))));
+  const idx={}; photos.forEach(x=>{ const k=[x.plant,x.cat,x.item,x.comp].join('\u0001'); (idx[k]=idx[k]||{before:0,after:0})[x.stage]=(idx[k][x.stage]||0)+1; });
+  let total=0, done=0, partial=0;
+  let html='<thead><tr><th class="rowh">類別／廢物品／主軸元件</th>'+cfg.plants.map(p=>'<th title="'+esc(p.name)+'">'+esc(p.code)+'</th>').join('')+'</tr></thead><tbody>';
+  rows.forEach(r=>{
+    html+='<tr><td class="rowh">'+esc(r.cat)+'／'+esc(r.item)+'<br><span class="note">'+esc(r.comp)+'</span></td>';
+    cfg.plants.forEach(p=>{ const v=idx[[p.code,r.cat,r.item,r.comp].join('\u0001')]||{before:0,after:0}; total++; const both=v.before>0&&v.after>0, any=v.before>0||v.after>0; if(both) done++; else if(any) partial++;
+      html+='<td class="'+(both?'c2':any?'c1':'c0')+'">'+v.before+' / '+v.after+'</td>'; });
+    html+='</tr>';
+  });
+  html+='</tbody>'; $('#progTable').innerHTML=html;
+  $('#sumBoxes').innerHTML='<div class="sumbox"><div class="n">'+done+'<span style="font-size:13px;color:var(--muted)"> / '+total+'</span></div><div class="l">完成（前後皆有）</div></div><div class="sumbox"><div class="n" style="color:var(--warn)">'+partial+'</div><div class="l">僅一種</div></div><div class="sumbox"><div class="n" style="color:var(--muted)">'+photos.length+'</div><div class="l">照片總數</div></div>';
+}
+
+/* ---------- 設定 ---------- */
+$('#btnAdmin').onclick = async ()=>{
+  const v=$('#inpAdmin').value; if(!v) return;
+  try{ await call({action:'checkAdmin', admin:v}); admin=v; ss('admin',v); setRole('管理者'); toast('管理者登入成功'); cfgEdit=null; renderConfig(); }
+  catch(err){ toast(err.message); }
+};
+function renderConfig(){
+  if(!cfgEdit) cfgEdit=deepClone(cfg);
+  const ro=!admin; $('#adminCard').style.display = ro?'block':'none';
+  const e=cfgEdit;
+  $('#cfgPlants').innerHTML=e.plants.map((p,i)=>'<div class="row"><input class="code" type="text" value="'+esc(p.code)+'" data-pc="'+i+'" placeholder="代碼" '+(ro?'readonly':'')+'><input type="text" value="'+esc(p.name)+'" data-pn="'+i+'" placeholder="機構名稱" '+(ro?'readonly':'')+'>'+(ro?'':'<button class="rm" data-prm="'+i+'" title="移除">✕</button>')+'</div>').join('');
+  $('#cfgTemplate').value=e.template; $('#cfgTemplate').readOnly=ro; $('#cfgMaxEdge').value=e.maxEdge||1920; $('#cfgMaxEdge').readOnly=ro;
+  $('#cfgCats').innerHTML=e.categories.map((c,ci)=>'<div class="card"><h2>'+esc(c.label||c.key)+'：廢物品與主軸元件</h2>'+
+    c.items.map((it,ii)=>'<div class="item"><div class="row"><input type="text" value="'+esc(it.name)+'" data-in="'+ci+','+ii+'" placeholder="廢物品名稱" '+(ro?'readonly':'')+'>'+(ro?'':'<button class="rm" data-irm="'+ci+','+ii+'">✕</button>')+'</div>'+
+      '<label class="f">主軸元件（一行一個；可用「｜」加註破壞方式提示）</label><textarea data-ic="'+ci+','+ii+'" '+(ro?'readonly':'')+'>'+esc(it.comps.map(cp=>cp.name+(cp.hint?'｜'+cp.hint:'')).join('\n'))+'</textarea></div>').join('')+
+    (ro?'':'<button class="btn sm" data-iadd="'+ci+'" style="margin-top:10px">＋ 新增廢物品</button>')+'</div>').join('');
+  $('#btnSaveCfg').disabled=ro; $('#btnResetCfg').disabled=ro; $('#btnAddPlant').disabled=ro;
+  const mark=()=>{ cfgDirty=true; };
+  $$('[data-pc]').forEach(i=>i.oninput=()=>{ e.plants[+i.dataset.pc].code=i.value; mark(); updateTplPreview(); });
+  $$('[data-pn]').forEach(i=>i.oninput=()=>{ e.plants[+i.dataset.pn].name=i.value; mark(); });
+  $$('[data-prm]').forEach(b=>b.onclick=()=>{ e.plants.splice(+b.dataset.prm,1); mark(); renderConfig(); });
+  $('#btnAddPlant').onclick=()=>{ if(ro) return; e.plants.push({code:'P'+pad(e.plants.length+1),name:''}); mark(); renderConfig(); };
+  $('#cfgTemplate').oninput=ev=>{ e.template=ev.target.value; mark(); updateTplPreview(); };
+  $('#cfgMaxEdge').oninput=ev=>{ e.maxEdge=+ev.target.value||1920; mark(); };
+  $$('[data-in]').forEach(i=>i.oninput=()=>{ const [a,b]=i.dataset.in.split(',').map(Number); e.categories[a].items[b].name=i.value; mark(); });
+  $$('[data-ic]').forEach(t=>t.oninput=()=>{ const [a,b]=t.dataset.ic.split(',').map(Number); e.categories[a].items[b].comps=t.value.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{ const [n,...h]=l.split(/[｜|]/); return {name:n.trim(),hint:h.join('|').trim()}; }); mark(); });
+  $$('[data-irm]').forEach(b=>b.onclick=()=>{ const [a,bb]=b.dataset.irm.split(',').map(Number); e.categories[a].items.splice(bb,1); mark(); renderConfig(); });
+  $$('[data-iadd]').forEach(b=>b.onclick=()=>{ e.categories[+b.dataset.iadd].items.push({name:'',comps:[]}); mark(); renderConfig(); });
+  updateTplPreview();
+}
+function updateTplPreview(){
+  const e=cfgEdit||cfg; const p=e.plants[0]||{code:'P01',name:'範例廠'}; const s=stamp();
+  const map={ '機構代碼':p.code,'機構名稱':p.name,'類別':'家電','物品':'廢電冰箱','元件':'廢壓縮機','階段':'破壞前','日期':s.date,'時間':s.time,'序號':'A123','上傳者':'王小明' };
+  $('#tplPreview').textContent = sanitize((e.template||'').replace(/\{([^}]+)\}/g,(m,k)=>map[k]!==undefined?map[k]:''))+'.jpg';
+}
+$('#btnSaveCfg').onclick=async()=>{
+  if(!admin) return;
+  const e=cfgEdit;
+  e.plants=e.plants.filter(p=>p.code.trim()||p.name.trim()).map(p=>({code:sanitize(p.code.trim())||'P',name:p.name.trim()}));
+  e.categories.forEach(c=>{ c.items=c.items.filter(it=>it.name.trim()).map(it=>({name:it.name.trim(),comps:(it.comps||[]).filter(cp=>cp.name)})); });
+  if(!e.plants.length){ toast('至少需要一個機構'); return; }
+  try{ await call({action:'saveConfig', admin, config:e}); cfg=deepClone(e); cfgDirty=false; afterCfgChange(); toast('設定已儲存 ✓'); }
+  catch(err){ toast('儲存失敗：'+err.message); }
+};
+$('#btnResetCfg').onclick=async()=>{ if(!admin) return; if(!await confirmBox('還原為手冊預設的廢物品／主軸元件清單？機構名單會保留。')) return; const plants=cfgEdit.plants; cfgEdit=deepClone(DEFAULT_CONFIG); cfgEdit.plants=plants; cfgDirty=true; renderConfig(); };
+function afterCfgChange(){
+  sel.plant=Math.min(sel.plant,cfg.plants.length-1); sel.cat=Math.min(sel.cat,cfg.categories.length-1); sel.item=Math.min(sel.item,(cfg.categories[sel.cat]?.items.length||1)-1);
+  renderUploadSelectors(); fillFilterSelects();
+  if($('#view-progress').classList.contains('active')) renderProgress();
+  if($('#view-gallery').classList.contains('active')) renderGallery();
+}
+
+/* ---------- 啟動 ---------- */
+renderUploadSelectors(); fillFilterSelects(); route();
+connect();
+})();
+</script>
+</body>
+</html>
